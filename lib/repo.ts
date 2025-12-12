@@ -3,14 +3,13 @@
 import { db } from './db';
 import { Account, BalanceSnapshot, CashCount, LedgerType, Match, Transaction, Transfer } from './types';
 import { v4 as uuid } from 'uuid';
-import { liveQuery } from 'dexie';
 
-export const liveAccounts = () => liveQuery(() => db.accounts.toArray());
-export const liveTransactions = () => liveQuery(() => db.transactions.toArray());
-export const liveTransfers = () => liveQuery(() => db.transfers.toArray());
-export const liveMatches = () => liveQuery(() => db.matches.toArray());
-export const liveCashCounts = () => liveQuery(() => db.cashCounts.toArray());
-export const liveBalanceSnapshots = () => liveQuery(() => db.balanceSnapshots.toArray());
+export const liveAccounts = () => db.accounts.toArray();
+export const liveTransactions = () => db.transactions.toArray();
+export const liveTransfers = () => db.transfers.toArray();
+export const liveMatches = () => db.matches.toArray();
+export const liveCashCounts = () => db.cashCounts.toArray();
+export const liveBalanceSnapshots = () => db.balanceSnapshots.toArray();
 
 export async function createAccount(data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) {
   const now = new Date().toISOString();
