@@ -2,7 +2,18 @@
 
 import { createContext, useContext, useState } from 'react';
 
-export type Toast = { id: string; title: string; description?: string; type?: 'default' | 'error' };
+export type Toast = {
+  id: string;
+  title: string;
+  description?: string;
+  /**
+   * Support both the simplified `type` field we use across the app and the
+   * legacy shadcn-style `variant` field so that accidental `variant` usages do
+   * not break type-checks during builds.
+   */
+  type?: 'default' | 'error';
+  variant?: 'default' | 'destructive';
+};
 
 const ToastContext = createContext<{ toasts: Toast[]; push: (toast: Omit<Toast, 'id'>) => void }>({
   toasts: [],

@@ -9,7 +9,11 @@ export function Toaster() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`rounded border bg-white shadow px-4 py-2 text-sm ${toast.type === 'error' ? 'border-destructive text-destructive' : 'border-foreground/20'}`}
+          className={`rounded border bg-white shadow px-4 py-2 text-sm ${
+            toast.type === 'error' || toast.variant === 'destructive'
+              ? 'border-destructive text-destructive'
+              : 'border-foreground/20'
+          }`}
         >
           <div className="font-semibold">{toast.title}</div>
           {toast.description && <div className="text-foreground/70">{toast.description}</div>}
