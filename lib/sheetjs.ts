@@ -1,4 +1,5 @@
-// خفيف لتصدير قوالب XLSX بدون الاعتماد على حزم خارجية في بيئة الاختبار
+// Minimal SheetJS-like helpers for client-side exports without depending on runtime bundling quirks.
+// If the real `xlsx` package is available it can be swapped in, but this stub keeps offline builds working.
 export type Sheet = string[][];
 
 export const utils = {

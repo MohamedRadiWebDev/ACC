@@ -36,7 +36,7 @@ declare module 'papaparse' {
   export default Papa;
 }
 
-declare module 'sheetjs';
+declare module 'xlsx';
 declare module 'vitest/config' {
   export function defineConfig(config: any): any;
 }
