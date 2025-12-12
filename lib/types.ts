@@ -79,4 +79,5 @@ export interface BalanceSnapshot {
   date: string;
   actualBalance: number;
   notes?: string;
+  createdAt: string;
 }

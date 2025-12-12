@@ -90,24 +90,49 @@ export async function createMatch(txAId: string, txBId: string) {
 export async function addCashCount(data: Omit<CashCount, 'id' | 'createdAt' | 'totalCash'>) {
   const totalCash = data.items.reduce((sum, item) => sum + item.denomination * (item.countFit + item.countTorn), 0);
   const entry: CashCount = { ...data, id: uuid(), totalCash, createdAt: new Date().toISOString() };
+  const existing = await db.cashCounts.where({ cashboxAccountId: data.cashboxAccountId, date: data.date }).first();
+  if (existing) {
+    await db.cashCounts.update(existing.id, { ...entry, id: existing.id, createdAt: existing.createdAt });
+    return { ...entry, id: existing.id, createdAt: existing.createdAt };
+  }
   await db.cashCounts.add(entry);
   return entry;
 }
 
-export async function addBalanceSnapshot(data: Omit<BalanceSnapshot, 'id'>) {
-  const entry: BalanceSnapshot = { ...data, id: uuid() };
+export async function addBalanceSnapshot(data: Omit<BalanceSnapshot, 'id' | 'createdAt'>) {
+  const entry: BalanceSnapshot = { ...data, id: uuid(), createdAt: new Date().toISOString() };
   await db.balanceSnapshots.add(entry);
   return entry;
 }
 
+export async function updateBalanceSnapshot(id: string, patch: Partial<BalanceSnapshot>) {
+  await db.balanceSnapshots.update(id, patch);
+}
+
+export async function deleteBalanceSnapshot(id: string) {
+  await db.balanceSnapshots.delete(id);
+}
+
 export async function seedDemo() {
-  await db.transaction('rw', db.accounts, db.transactions, db.transfers, async () => {
-    await db.delete();
+  await db.transaction('rw', db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots, async () => {
+    await db.accounts.clear();
+    await db.transactions.clear();
+    await db.transfers.clear();
+    await db.matches.clear();
+    await db.cashCounts.clear();
+    await db.balanceSnapshots.clear();
   });
 }
 
 export function calculateBalance(openingBalance: number, transactions: Transaction[]) {
   return transactions.reduce((acc, tx) => (tx.direction === 'IN' ? acc + tx.amount : acc - tx.amount), openingBalance);
+}
+
+export function calculateBalanceUntil(openingBalance: number, transactions: Transaction[], untilDate?: string) {
+  const filtered = untilDate
+    ? transactions.filter((t) => t.date <= untilDate).sort((a, b) => (a.date === b.date ? a.createdAt.localeCompare(b.createdAt) : a.date.localeCompare(b.date)))
+    : transactions;
+  return calculateBalance(openingBalance, filtered);
 }
 
 export function balanceAfterTransaction(openingBalance: number, transactions: Transaction[], targetId: string) {
@@ -120,16 +145,20 @@ export function balanceAfterTransaction(openingBalance: number, transactions: Tr
 }
 
 export function suggestMatches(cashTx: Transaction[], digitalTx: Transaction[], toleranceDays = 2) {
-  const suggestions: { cash: Transaction; digital: Transaction }[] = [];
+  const suggestions: { cash: Transaction; digital: Transaction; score: number }[] = [];
   cashTx.forEach((c) => {
     digitalTx.forEach((d) => {
       const days = Math.abs(new Date(c.date).getTime() - new Date(d.date).getTime()) / (1000 * 60 * 60 * 24);
       if (c.amount === d.amount && c.direction !== d.direction && days <= toleranceDays) {
-        suggestions.push({ cash: c, digital: d });
+        let score = 1;
+        if (c.description && d.description && c.description.includes('تحويل') && d.description.includes('تحويل')) score += 1;
+        if (c.description && d.description && d.description.includes(c.description.slice(0, 5))) score += 0.5;
+        score += Math.max(0, toleranceDays - days);
+        suggestions.push({ cash: c, digital: d, score });
       }
     });
   });
-  return suggestions;
+  return suggestions.sort((a, b) => b.score - a.score);
 }
 
 export async function exportAll(): Promise<string> {
@@ -142,4 +171,28 @@ export async function exportAll(): Promise<string> {
     db.balanceSnapshots.toArray(),
   ]);
   return JSON.stringify({ accounts, transactions, transfers, matches, cashCounts, balanceSnapshots }, null, 2);
+}
+
+export async function importJson(payload: any, mode: 'replace' | 'merge' = 'merge') {
+  const { accounts = [], transactions = [], transfers = [], matches = [], cashCounts = [], balanceSnapshots = [] } = payload || {};
+  if (mode === 'replace') {
+    await db.transaction('rw', db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots, async () => {
+      await Promise.all([
+        db.accounts.clear(),
+        db.transactions.clear(),
+        db.transfers.clear(),
+        db.matches.clear(),
+        db.cashCounts.clear(),
+        db.balanceSnapshots.clear(),
+      ]);
+    });
+  }
+  await db.transaction('rw', db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots, async () => {
+    if (accounts.length) await db.accounts.bulkPut(accounts);
+    if (transactions.length) await db.transactions.bulkPut(transactions);
+    if (transfers.length) await db.transfers.bulkPut(transfers);
+    if (matches.length) await db.matches.bulkPut(matches);
+    if (cashCounts.length) await db.cashCounts.bulkPut(cashCounts);
+    if (balanceSnapshots.length) await db.balanceSnapshots.bulkPut(balanceSnapshots);
+  });
 }

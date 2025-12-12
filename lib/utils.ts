@@ -17,7 +17,7 @@ export function ledgerForAccount(account: Account): LedgerType {
 }
 
 export function generateTemplateCSV() {
-  const headers = [
+  const headersEn = [
     'date',
     'accountName',
     'direction',
@@ -34,7 +34,27 @@ export function generateTemplateCSV() {
     'approved',
     'notes',
   ];
-  return Papa.unparse([headers]);
+  const headersAr = [
+    'التاريخ',
+    'اسم الحساب',
+    'نوع الحركة (IN/OUT)',
+    'المبلغ',
+    'الوصف',
+    'التصنيف',
+    'كود الموظف',
+    'اسم الموظف',
+    'القسم',
+    'الفرع',
+    'فاتورة',
+    'إذن صرف',
+    'إذن قبض',
+    'معتمد',
+    'ملاحظات',
+  ];
+  return {
+    english: Papa.unparse([headersEn]),
+    arabic: Papa.unparse([headersAr]),
+  };
 }
 
 export function parseBool(value: string | undefined) {
@@ -49,4 +69,9 @@ export function runningBalance(openingBalance: number, transactions: Transaction
       total = tx.direction === 'IN' ? total + tx.amount : total - tx.amount;
       return { id: tx.id, balance: total };
     });
+}
+
+export function formatVariance(value: number) {
+  if (value === 0) return 'مطابق';
+  return value > 0 ? 'زيادة' : 'عجز';
 }
