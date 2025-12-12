@@ -114,14 +114,18 @@ export async function deleteBalanceSnapshot(id: string) {
 }
 
 export async function seedDemo() {
-  await db.transaction('rw', db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots, async () => {
-    await db.accounts.clear();
-    await db.transactions.clear();
-    await db.transfers.clear();
-    await db.matches.clear();
-    await db.cashCounts.clear();
-    await db.balanceSnapshots.clear();
-  });
+  await db.transaction(
+    'rw',
+    [db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots],
+    async () => {
+      await db.accounts.clear();
+      await db.transactions.clear();
+      await db.transfers.clear();
+      await db.matches.clear();
+      await db.cashCounts.clear();
+      await db.balanceSnapshots.clear();
+    }
+  );
 }
 
 export function calculateBalance(openingBalance: number, transactions: Transaction[]) {
@@ -176,23 +180,31 @@ export async function exportAll(): Promise<string> {
 export async function importJson(payload: any, mode: 'replace' | 'merge' = 'merge') {
   const { accounts = [], transactions = [], transfers = [], matches = [], cashCounts = [], balanceSnapshots = [] } = payload || {};
   if (mode === 'replace') {
-    await db.transaction('rw', db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots, async () => {
-      await Promise.all([
-        db.accounts.clear(),
-        db.transactions.clear(),
-        db.transfers.clear(),
-        db.matches.clear(),
-        db.cashCounts.clear(),
-        db.balanceSnapshots.clear(),
-      ]);
-    });
+    await db.transaction(
+      'rw',
+      [db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots],
+      async () => {
+        await Promise.all([
+          db.accounts.clear(),
+          db.transactions.clear(),
+          db.transfers.clear(),
+          db.matches.clear(),
+          db.cashCounts.clear(),
+          db.balanceSnapshots.clear(),
+        ]);
+      }
+    );
   }
-  await db.transaction('rw', db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots, async () => {
-    if (accounts.length) await db.accounts.bulkPut(accounts);
-    if (transactions.length) await db.transactions.bulkPut(transactions);
-    if (transfers.length) await db.transfers.bulkPut(transfers);
-    if (matches.length) await db.matches.bulkPut(matches);
-    if (cashCounts.length) await db.cashCounts.bulkPut(cashCounts);
-    if (balanceSnapshots.length) await db.balanceSnapshots.bulkPut(balanceSnapshots);
-  });
+  await db.transaction(
+    'rw',
+    [db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots],
+    async () => {
+      if (accounts.length) await db.accounts.bulkPut(accounts);
+      if (transactions.length) await db.transactions.bulkPut(transactions);
+      if (transfers.length) await db.transfers.bulkPut(transfers);
+      if (matches.length) await db.matches.bulkPut(matches);
+      if (cashCounts.length) await db.cashCounts.bulkPut(cashCounts);
+      if (balanceSnapshots.length) await db.balanceSnapshots.bulkPut(balanceSnapshots);
+    }
+  );
 }

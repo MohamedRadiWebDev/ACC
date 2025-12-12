@@ -67,7 +67,7 @@ export default function CashboxPage() {
     if (!cashAccount) return;
     const parsed = countSchema.safeParse({ cashboxAccountId: cashAccount.id, date: countDate, items });
     if (!parsed.success) {
-      push({ title: 'تحقق من بيانات الجرد', description: parsed.error.errors[0].message, variant: 'destructive' });
+      push({ title: 'تحقق من بيانات الجرد', description: parsed.error.errors[0].message, type: 'error' });
       return;
     }
     await addCashCount(parsed.data);

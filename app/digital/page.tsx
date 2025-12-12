@@ -42,7 +42,7 @@ export default function DigitalPage() {
     if (!account) return;
     const parsed = schema.safeParse({ date: form.date, actualBalance: form.actualBalance, notes: form.notes });
     if (!parsed.success) {
-      push({ title: 'تحقق من البيانات', description: parsed.error.errors[0].message, variant: 'destructive' });
+      push({ title: 'تحقق من البيانات', description: parsed.error.errors[0].message, type: 'error' });
       return;
     }
     if (form.id) {
