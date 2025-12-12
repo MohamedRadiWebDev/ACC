@@ -81,3 +81,114 @@ export interface BalanceSnapshot {
   notes?: string;
   createdAt: string;
 }
+
+// Treasury-focused data model
+export interface TreasuryTransaction {
+  id: string;
+  date: string;
+  description: string;
+  payeeCompany: string;
+  invoiceNo: string;
+  employeeCode: string;
+  employeeName: string;
+  department: string;
+  branch: string;
+  expenseType: string;
+  receiptOutNo: string;
+  receiptInNo: string;
+  approved: boolean;
+  notes?: string;
+  inAmount: number;
+  outAmount: number;
+  createdAt: string;
+}
+
+export interface TreasuryCashCountItem {
+  denomination: number;
+  count: number;
+}
+
+export interface TreasuryCashCount {
+  id: string;
+  date: string;
+  items: TreasuryCashCountItem[];
+  totalCash: number;
+  createdAt: string;
+}
+
+export type BankName = 'BANK_MISR' | 'CREDIT_BANK' | 'NBK' | 'EG_BANK';
+
+export interface BankTransaction {
+  id: string;
+  bankName: BankName;
+  balance?: number;
+  credit: number;
+  debit: number;
+  date: string;
+  postedDate?: string;
+  valueDate?: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface RevenueInvoice {
+  id: string;
+  customer: string;
+  invoiceMonth: string;
+  invoiceDate: string;
+  totalWithVat14: number;
+  totalWithoutVat14: number;
+  cairo: number;
+  mansoura: number;
+  legal: number;
+  other: number;
+  vat14: number;
+  tax3: number;
+  requiredToTransfer: number;
+  paidAmount: number;
+  expenses: number;
+  dueAmount: number;
+  dueDate: string;
+  paymentTerm: string;
+  eligibility: 'مستحق' | 'غير مستحق';
+  delayDays: number;
+  paidDate?: string;
+  actualRevenueMinus14: number;
+  notes?: string;
+  createdAt: string;
+}
+
+export type AdvanceType = 'ADVANCE' | 'REPAYMENT';
+
+export interface AdvanceTransaction {
+  id: string;
+  date: string;
+  month: string;
+  employeeCode: string;
+  employeeName: string;
+  department: string;
+  type: AdvanceType;
+  amount: number;
+  repaymentMethod: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type CustodyType = 'CUSTODY' | 'SETTLEMENT';
+
+export interface CustodyTransaction {
+  id: string;
+  date: string;
+  month: string;
+  description: string;
+  paidTo: string;
+  invoiceOrEmployeeRef: string;
+  department: string;
+  classification: string;
+  expenseType: string;
+  receiptRef: string;
+  type: CustodyType;
+  amount: number;
+  notes?: string;
+  createdAt: string;
+}

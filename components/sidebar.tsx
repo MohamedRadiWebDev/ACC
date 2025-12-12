@@ -5,13 +5,17 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const links = [
-  { href: '/', label: 'لوحة المعلومات' },
-  { href: '/accounts', label: 'الحسابات' },
-  { href: '/cashbox', label: 'الخزنة' },
-  { href: '/digital', label: 'الإدارة الرقمية' },
-  { href: '/transfers', label: 'التحويلات' },
-  { href: '/reconcile', label: 'المطابقة' },
+  { href: '/', label: 'لوحة التحكم' },
+  { href: '/treasury', label: 'الخزنة' },
+  { href: '/treasury-count', label: 'جرد الخزينة' },
+  { href: '/banks', label: 'البنوك' },
+  { href: '/digital-wallets', label: 'المحافظ الرقمية' },
+  { href: '/revenue', label: 'الايراد' },
+  { href: '/advances', label: 'السلف' },
+  { href: '/custody', label: 'العهد' },
+  { href: '/reconciliation', label: 'المطابقة' },
   { href: '/reports', label: 'التقارير' },
+  { href: '/import-export', label: 'استيراد/تصدير' },
   { href: '/settings', label: 'الإعدادات' },
 ];
 

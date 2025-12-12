@@ -1,7 +1,21 @@
 'use client';
 
 import { db } from './db';
-import { Account, BalanceSnapshot, CashCount, LedgerType, Match, Transaction, Transfer } from './types';
+import {
+  Account,
+  AdvanceTransaction,
+  CashCount,
+  BalanceSnapshot,
+  BankTransaction,
+  CustodyTransaction,
+  LedgerType,
+  Match,
+  RevenueInvoice,
+  Transaction,
+  Transfer,
+  TreasuryCashCount,
+  TreasuryTransaction,
+} from './types';
 import { v4 as uuid } from 'uuid';
 
 export const liveAccounts = () => db.accounts.toArray();
@@ -10,6 +24,12 @@ export const liveTransfers = () => db.transfers.toArray();
 export const liveMatches = () => db.matches.toArray();
 export const liveCashCounts = () => db.cashCounts.toArray();
 export const liveBalanceSnapshots = () => db.balanceSnapshots.toArray();
+export const liveTreasury = () => db.treasuryTransactions.toArray();
+export const liveTreasuryCounts = () => db.treasuryCounts.toArray();
+export const liveRevenueInvoices = () => db.revenueInvoices.toArray();
+export const liveBankTransactions = () => db.bankTransactions.toArray();
+export const liveAdvanceTransactions = () => db.advanceTransactions.toArray();
+export const liveCustodyTransactions = () => db.custodyTransactions.toArray();
 
 export async function createAccount(data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) {
   const now = new Date().toISOString();
@@ -166,45 +186,162 @@ export function suggestMatches(cashTx: Transaction[], digitalTx: Transaction[], 
 }
 
 export async function exportAll(): Promise<string> {
-  const [accounts, transactions, transfers, matches, cashCounts, balanceSnapshots] = await Promise.all([
+  const [
+    accounts,
+    transactions,
+    transfers,
+    matches,
+    cashCounts,
+    balanceSnapshots,
+    treasuryTransactions,
+    treasuryCounts,
+    revenueInvoices,
+    bankTransactions,
+    advanceTransactions,
+    custodyTransactions,
+  ] = await Promise.all([
     db.accounts.toArray(),
     db.transactions.toArray(),
     db.transfers.toArray(),
     db.matches.toArray(),
     db.cashCounts.toArray(),
     db.balanceSnapshots.toArray(),
+    db.treasuryTransactions.toArray(),
+    db.treasuryCounts.toArray(),
+    db.revenueInvoices.toArray(),
+    db.bankTransactions.toArray(),
+    db.advanceTransactions.toArray(),
+    db.custodyTransactions.toArray(),
   ]);
-  return JSON.stringify({ accounts, transactions, transfers, matches, cashCounts, balanceSnapshots }, null, 2);
+  return JSON.stringify(
+    {
+      accounts,
+      transactions,
+      transfers,
+      matches,
+      cashCounts,
+      balanceSnapshots,
+      treasuryTransactions,
+      treasuryCounts,
+      revenueInvoices,
+      bankTransactions,
+      advanceTransactions,
+      custodyTransactions,
+    },
+    null,
+    2
+  );
 }
 
 export async function importJson(payload: any, mode: 'replace' | 'merge' = 'merge') {
-  const { accounts = [], transactions = [], transfers = [], matches = [], cashCounts = [], balanceSnapshots = [] } = payload || {};
+  const {
+    accounts = [],
+    transactions = [],
+    transfers = [],
+    matches = [],
+    cashCounts = [],
+    balanceSnapshots = [],
+    treasuryTransactions = [],
+    treasuryCounts = [],
+    revenueInvoices = [],
+    bankTransactions = [],
+    advanceTransactions = [],
+    custodyTransactions = [],
+  } = payload || {};
+  const tables = [
+    db.accounts,
+    db.transactions,
+    db.transfers,
+    db.matches,
+    db.cashCounts,
+    db.balanceSnapshots,
+    db.treasuryTransactions,
+    db.treasuryCounts,
+    db.revenueInvoices,
+    db.bankTransactions,
+    db.advanceTransactions,
+    db.custodyTransactions,
+  ];
   if (mode === 'replace') {
-    await db.transaction(
-      'rw',
-      [db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots],
-      async () => {
-        await Promise.all([
-          db.accounts.clear(),
-          db.transactions.clear(),
-          db.transfers.clear(),
-          db.matches.clear(),
-          db.cashCounts.clear(),
-          db.balanceSnapshots.clear(),
-        ]);
-      }
-    );
+    await db.transaction('rw', tables, async () => {
+      await Promise.all(tables.map((table) => table.clear()));
+    });
   }
-  await db.transaction(
-    'rw',
-    [db.accounts, db.transactions, db.transfers, db.matches, db.cashCounts, db.balanceSnapshots],
-    async () => {
-      if (accounts.length) await db.accounts.bulkPut(accounts);
-      if (transactions.length) await db.transactions.bulkPut(transactions);
-      if (transfers.length) await db.transfers.bulkPut(transfers);
-      if (matches.length) await db.matches.bulkPut(matches);
-      if (cashCounts.length) await db.cashCounts.bulkPut(cashCounts);
-      if (balanceSnapshots.length) await db.balanceSnapshots.bulkPut(balanceSnapshots);
-    }
-  );
+  await db.transaction('rw', tables, async () => {
+    if (accounts.length) await db.accounts.bulkPut(accounts);
+    if (transactions.length) await db.transactions.bulkPut(transactions);
+    if (transfers.length) await db.transfers.bulkPut(transfers);
+    if (matches.length) await db.matches.bulkPut(matches);
+    if (cashCounts.length) await db.cashCounts.bulkPut(cashCounts);
+    if (balanceSnapshots.length) await db.balanceSnapshots.bulkPut(balanceSnapshots);
+    if (treasuryTransactions.length) await db.treasuryTransactions.bulkPut(treasuryTransactions);
+    if (treasuryCounts.length) await db.treasuryCounts.bulkPut(treasuryCounts);
+    if (revenueInvoices.length) await db.revenueInvoices.bulkPut(revenueInvoices);
+    if (bankTransactions.length) await db.bankTransactions.bulkPut(bankTransactions);
+    if (advanceTransactions.length) await db.advanceTransactions.bulkPut(advanceTransactions);
+    if (custodyTransactions.length) await db.custodyTransactions.bulkPut(custodyTransactions);
+  });
+}
+
+export async function upsertTreasuryTransaction(entry: Omit<TreasuryTransaction, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) {
+  const now = new Date().toISOString();
+  const tx: TreasuryTransaction = {
+    ...entry,
+    id: entry.id ?? uuid(),
+    createdAt: entry.id ? entry.createdAt ?? now : now,
+  };
+  await db.treasuryTransactions.put(tx);
+  return tx;
+}
+
+export async function deleteTreasuryTransaction(id: string) {
+  await db.treasuryTransactions.delete(id);
+}
+
+export async function upsertTreasuryCount(entry: Omit<TreasuryCashCount, 'id' | 'createdAt' | 'totalCash'> & { id?: string }) {
+  const totalCash = entry.items.reduce((sum, item) => sum + item.denomination * item.count, 0);
+  const now = new Date().toISOString();
+  const record: TreasuryCashCount = { ...entry, id: entry.id ?? uuid(), totalCash, createdAt: now };
+  await db.treasuryCounts.put(record);
+  return record;
+}
+
+export async function upsertRevenueInvoice(entry: Omit<RevenueInvoice, 'id' | 'createdAt'> & { id?: string }) {
+  const record: RevenueInvoice = { ...entry, id: entry.id ?? uuid(), createdAt: new Date().toISOString() };
+  await db.revenueInvoices.put(record);
+  return record;
+}
+
+export async function deleteRevenueInvoice(id: string) {
+  await db.revenueInvoices.delete(id);
+}
+
+export async function upsertBankTransaction(entry: Omit<BankTransaction, 'id' | 'createdAt'> & { id?: string }) {
+  const record: BankTransaction = { ...entry, id: entry.id ?? uuid(), createdAt: new Date().toISOString() };
+  await db.bankTransactions.put(record);
+  return record;
+}
+
+export async function deleteBankTransaction(id: string) {
+  await db.bankTransactions.delete(id);
+}
+
+export async function upsertAdvanceTransaction(entry: Omit<AdvanceTransaction, 'id' | 'createdAt'> & { id?: string }) {
+  const record: AdvanceTransaction = { ...entry, id: entry.id ?? uuid(), createdAt: new Date().toISOString() };
+  await db.advanceTransactions.put(record);
+  return record;
+}
+
+export async function deleteAdvanceTransaction(id: string) {
+  await db.advanceTransactions.delete(id);
+}
+
+export async function upsertCustodyTransaction(entry: Omit<CustodyTransaction, 'id' | 'createdAt'> & { id?: string }) {
+  const record: CustodyTransaction = { ...entry, id: entry.id ?? uuid(), createdAt: new Date().toISOString() };
+  await db.custodyTransactions.put(record);
+  return record;
+}
+
+export async function deleteCustodyTransaction(id: string) {
+  await db.custodyTransactions.delete(id);
 }
